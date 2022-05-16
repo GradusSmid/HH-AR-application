@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 using TMPro;
+using UnityEngine.UI;
 
 public class Blowing : MonoBehaviour
 {
@@ -11,8 +12,11 @@ public class Blowing : MonoBehaviour
     AudioClip microphoneInput;
     bool microphoneInitialized;
     public float sensitivity;
+    public Slider sensitivitySlider;
     float growFactor = 0.2f;
     [SerializeField] bool canBlow;
+    public float blowOut = 6f;
+    public float blowIn =2.5f;
 
     public Transform BlowIcon;
     public int score;
@@ -23,6 +27,18 @@ public class Blowing : MonoBehaviour
     public bool intoNotFinished;
     public string[] compliments;
     float targetScore =5;
+
+    public AudioSource ademin;
+
+    public AudioSource ademuit;
+
+    public AudioSource probeernuzelf;
+
+    public AudioSource wowgazodoor;
+
+    public AudioSource[] complimentVoices;
+    bool playingaudio = false;
+
     // Start is called before the first frame update
     void Awake()
     {
@@ -33,33 +49,46 @@ public class Blowing : MonoBehaviour
             microphoneInput = Microphone.Start(selectedDevice, true, 1, AudioSettings.outputSampleRate);
             microphoneInitialized = true;
             Debug.Log(selectedDevice);
-            InvokeRepeating("Switch", 0f, 2f);
         }
     }
 
     void Start()
     {
         introductionPanel3.SetActive(true);
+        StartCoroutine("Switch", blowIn);
+        ademin.Play();
     }
     void Update()
     {
+        sensitivity = sensitivitySlider.value;
         if (canBlow)
         {
             BlowIcon.gameObject.SetActive(true);
-            if (intoNotFinished)
+            if (score == 0)
+            {
+                ademin.Play();
                 blowText.text = "Blaas nu rustig";
+            }
+            
         }
         else
         {
             BlowIcon.gameObject.SetActive(false);
-            if (intoNotFinished)
+            if (score == 0)
+            {
+                ademuit.Play();
                 blowText.text = "Adem in";
+            }
         }
         Blow();
         scoreText.text = "Score:" + score;
-        if (score == 1)
+        
+        if (score == 1 && playingaudio == false)
         {
             blowText.text = "Goed gedaan, probeer het nu zelf";
+            Debug.Log(("Play audio"));
+            probeernuzelf.Play();
+            playingaudio = true;
         }
 
         if(score == 2 && intoNotFinished)
@@ -83,9 +112,23 @@ public class Blowing : MonoBehaviour
         }
    
     }
-    public void Switch()
+    public IEnumerator Switch(float blow)
     {
+        yield return new WaitForSeconds(blow);
         canBlow = !canBlow;
+
+        if (canBlow)
+        {
+            blow = blowOut;
+        }
+
+        if (!canBlow)
+        {
+            blow = blowIn;
+            
+        }
+
+        StartCoroutine("Switch", blow);
     }
 
     public void Blow()
@@ -110,7 +153,7 @@ public class Blowing : MonoBehaviour
 
         if (level > sensitivity && canBlow && transform.childCount!=0)
         {
-            Debug.Log("Nice");
+            Debug.Log("Blowing");
             this.transform.GetChild(0).localScale += new Vector3(1, 1, 1) * Time.deltaTime * growFactor;
         }
 
@@ -125,7 +168,8 @@ public class Blowing : MonoBehaviour
         intoNotFinished = false;
         Debug.Log("1x doen");
         blowText.text = "Wow dit gaat fantastisch, ga zo door!";
-        yield return new WaitForSeconds(2f);
+        wowgazodoor.Play();
+        yield return new WaitForSeconds(wowgazodoor.time);
 
         introductionPanel3.SetActive(false);
     }
@@ -133,8 +177,9 @@ public class Blowing : MonoBehaviour
     public IEnumerator GiveCompliment()
     {
         introductionPanel3.SetActive(true);
-        blowText.text = compliments[Random.Range(0, compliments.Length)];
-
+        int currentCompliment = Random.Range(0, compliments.Length);
+        blowText.text = compliments[currentCompliment];
+        complimentVoices[currentCompliment].Play();
         yield return new WaitForSeconds(2f);
 
         introductionPanel3.SetActive(false);

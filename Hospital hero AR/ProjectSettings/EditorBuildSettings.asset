@@ -6,10 +6,11 @@ EditorBuildSettings:
   serializedVersion: 2
   m_Scenes:
   - enabled: 1
+    path: Assets/Scenes/Menu.unity
+    guid: e290d11d7410183439e0e17b310eb51c
+  - enabled: 1
     path: Assets/Scenes/BlowingScene.unity
     guid: 9fc0d4010bbf28b4594072e72b8655ab
   m_configObjects:
-    UnityEditor.XR.ARCore.ARCoreSettings: {fileID: 11400000, guid: 4e7b89b4a98d5d044b687f7ec4689a5c,
-      type: 2}
-    com.unity.xr.management.loader_settings: {fileID: 11400000, guid: c6b12f430fa297a41bbba02e3bf2b661,
-      type: 2}
+    UnityEditor.XR.ARCore.ARCoreSettings: {fileID: 11400000, guid: 4e7b89b4a98d5d044b687f7ec4689a5c, type: 2}
+    com.unity.xr.management.loader_settings: {fileID: 11400000, guid: c6b12f430fa297a41bbba02e3bf2b661, type: 2}

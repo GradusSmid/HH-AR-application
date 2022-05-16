@@ -1,23 +1,24 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
-
+using UnityEngine.SceneManagement;
+using TMPro;
+using UnityEngine.UI;
 public class Menu : MonoBehaviour
 {
-    // Start is called before the first frame update
-    void Start()
+    public Slider sensitivitySlider;
+    public TextMeshProUGUI slidervalue;
+    public void GoToScene(string sceneName)
     {
-        
+        SceneManager.LoadScene(sceneName);
     }
-
-    // Update is called once per frame
-    void Update()
-    {
-        
-    }
-
     public void Quit()
     {
         Application.Quit();
+    }
+
+    private void Update()
+    {
+        slidervalue.text = "sensitivity: " + sensitivitySlider.value;
     }
 }
