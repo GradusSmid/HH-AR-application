@@ -6,83 +6,154 @@ using UnityEngine.UI;
 
 public class Blowing : MonoBehaviour
 {
-
-    // Default Mic
-    public string selectedDevice;
-    AudioClip microphoneInput;
-    bool microphoneInitialized;
-    public float sensitivity;
-    public Slider sensitivitySlider;
+    public static float blowStrength = 80;
     float growFactor = 0.2f;
-    [SerializeField] bool canBlow;
+    private enum BlowStates {blowingOut, blowingIn, blowingBreak};
+    [SerializeField]BlowStates currentBlowStates;
     public float blowOut = 6f;
     public float blowIn =2.5f;
-
+    public float blowBreak = 2f;
+    private float currentBlow = 2.5f;
+    public bool playing;
     public Transform BlowIcon;
-    public int score;
+    private int score;
     public TextMeshProUGUI scoreText;
-
     public GameObject introductionPanel3;
     public TextMeshProUGUI blowText;
     public bool intoNotFinished;
     public string[] compliments;
     float targetScore =5;
-
     public AudioSource ademin;
-
+    public AudioSource ademinhouden;
     public AudioSource ademuit;
-
     public AudioSource probeernuzelf;
-
     public AudioSource wowgazodoor;
-
     public AudioSource[] complimentVoices;
     bool playingaudio = false;
 
-    // Start is called before the first frame update
-    void Awake()
-    {
-        //init microphone input
-        if (Microphone.devices.Length > 0)
-        {
-            selectedDevice = Microphone.devices[0].ToString();
-            microphoneInput = Microphone.Start(selectedDevice, true, 1, AudioSettings.outputSampleRate);
-            microphoneInitialized = true;
-            Debug.Log(selectedDevice);
-        }
-    }
 
+    // Start is called before the first frame update
     void Start()
     {
-        introductionPanel3.SetActive(true);
-        StartCoroutine("Switch", blowIn);
-        ademin.Play();
+
     }
     void Update()
     {
-        sensitivity = sensitivitySlider.value;
-        if (canBlow)
+        if(currentBlowStates == BlowStates.blowingOut)
         {
-            BlowIcon.gameObject.SetActive(true);
-            if (score == 0)
+            Blow();
+        }
+        
+        ScoreEvents();
+        Tutorial();
+
+        if (transform.childCount != 0)
+        {
+            if (this.transform.GetChild(0).localScale.x >= 2)
+            {
+                transform.DetachChildren();
+                score++;
+            }
+        }
+    }
+    void ScoreEvents()
+    {
+        scoreText.text = "Score:" + score;
+        if (score == targetScore)
+        {
+            StartCoroutine("GiveCompliment");
+            targetScore += 5;
+        }
+    }
+
+    IEnumerator Lerp(Vector3 startValue, Vector3 endValue, float lerpDuration)
+    {
+        float timeElapsed = 0;
+        while (timeElapsed < lerpDuration)
+        {
+            BlowIcon.localScale = Vector3.Lerp(startValue, endValue, timeElapsed / lerpDuration);
+            timeElapsed += Time.deltaTime;
+            yield return null;
+        }
+        BlowIcon.localScale = endValue;
+    }
+    public void StartSwitch()
+    {
+        StartCoroutine("Switch", currentBlow);
+        playing = true;
+    }
+    public void QuitPlaying()
+    {
+        playing = false;
+    }
+    public IEnumerator Switch(float blow)
+    {
+        
+        if (currentBlowStates == BlowStates.blowingOut)
+        {
+            currentBlow = blow;
+            blow = blowOut;
+            StartCoroutine(Lerp(BlowIcon.localScale, new Vector3(1, 1, 1), blowOut));
+        }
+
+        if(currentBlowStates == BlowStates.blowingBreak)
+        {
+            currentBlow = blow;
+            blow = blowBreak;
+        }
+
+        if (currentBlowStates == BlowStates.blowingIn)
+        {
+            currentBlow = blow;
+            blow = blowIn;
+            StartCoroutine(Lerp(BlowIcon.localScale, new Vector3(2, 2, 2), blowIn));
+        }
+        yield return new WaitForSeconds(blow);
+        currentBlowStates += 1;
+        if (currentBlowStates == BlowStates.blowingBreak + 1)
+        {
+            currentBlowStates = 0;
+        }
+
+        StartCoroutine("Switch", blow);
+    }
+    public void Blow()
+    {
+        float db = MicInput.MicLoudnessinDecibels;
+        float volume = MicInput.MicLoudness;
+        if(playing == true && transform.childCount != 0)
+        {
+            if (db < 1 && db > -blowStrength)
+            {
+                Debug.Log("Blazen");
+                this.transform.GetChild(0).localScale += new Vector3(1, 1, 1) * Time.deltaTime * growFactor;
+            }
+        }
+    }
+    void Tutorial()
+    {
+        if (score == 0 && playing)
+        {
+            if (currentBlowStates == BlowStates.blowingOut)
             {
                 ademin.Play();
+                introductionPanel3.SetActive(true);
                 blowText.text = "Blaas nu rustig";
             }
-            
-        }
-        else
-        {
-            BlowIcon.gameObject.SetActive(false);
-            if (score == 0)
+            if (currentBlowStates == BlowStates.blowingIn)
             {
-                ademuit.Play();
+                ademinhouden.Play();
+                introductionPanel3.SetActive(true);
                 blowText.text = "Adem in";
             }
+            if (currentBlowStates == BlowStates.blowingBreak)
+            {
+                ademuit.Play();
+                introductionPanel3.SetActive(true);
+                blowText.text = "houd je adem in";
+            }
         }
-        Blow();
-        scoreText.text = "Score:" + score;
-        
+
         if (score == 1 && playingaudio == false)
         {
             blowText.text = "Goed gedaan, probeer het nu zelf";
@@ -91,89 +162,20 @@ public class Blowing : MonoBehaviour
             playingaudio = true;
         }
 
-        if(score == 2 && intoNotFinished)
+        if (score == 2 && intoNotFinished)
         {
             StartCoroutine("tutorialFinished");
         }
-
-        if (score == targetScore)
-        {
-            StartCoroutine("GiveCompliment");
-            targetScore += 5;
-        }
-        if (transform.childCount != 0)
-        {
-            if(this.transform.GetChild(0).localScale.x >= 2)
-            {
-                transform.DetachChildren();
-                score++;
-            }
-            
-        }
-   
     }
-    public IEnumerator Switch(float blow)
-    {
-        yield return new WaitForSeconds(blow);
-        canBlow = !canBlow;
-
-        if (canBlow)
-        {
-            blow = blowOut;
-        }
-
-        if (!canBlow)
-        {
-            blow = blowIn;
-            
-        }
-
-        StartCoroutine("Switch", blow);
-    }
-
-    public void Blow()
-    {
-        //get mic volume
-        int dec = 128;
-        float[] waveData = new float[dec];
-        int micPosition = Microphone.GetPosition(selectedDevice) - (dec + 1); // null means the first microphone
-        microphoneInput.GetData(waveData, micPosition);
-
-        // Getting a peak on the last 128 samples
-        float levelMax = 0;
-        for (int i = 0; i < dec; i++)
-        {
-            float wavePeak = waveData[i] * waveData[i];
-            if (levelMax < wavePeak)
-            {
-                levelMax = wavePeak;
-            }
-        }
-        float level = Mathf.Sqrt(Mathf.Sqrt(levelMax));
-
-        if (level > sensitivity && canBlow && transform.childCount!=0)
-        {
-            Debug.Log("Blowing");
-            this.transform.GetChild(0).localScale += new Vector3(1, 1, 1) * Time.deltaTime * growFactor;
-        }
-
-        if (level < sensitivity)
-        {
-            Debug.Log("Silence");
-        }
-    }
-
     public IEnumerator tutorialFinished()
     {
         intoNotFinished = false;
-        Debug.Log("1x doen");
         blowText.text = "Wow dit gaat fantastisch, ga zo door!";
         wowgazodoor.Play();
         yield return new WaitForSeconds(wowgazodoor.time);
 
         introductionPanel3.SetActive(false);
     }
-
     public IEnumerator GiveCompliment()
     {
         introductionPanel3.SetActive(true);

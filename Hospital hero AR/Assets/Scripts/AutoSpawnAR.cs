@@ -23,9 +23,8 @@ public class AutoSpawnAR : MonoBehaviour
         if (args.added != null)
         {
             ARPlane arPlane = args.added[0];
-
-                int selection = Random.Range(0, placedObject.Length);
-                Instantiate(placedObject[selection], arPlane.transform.position, Quaternion.identity);
+            int selection = Random.Range(0, placedObject.Length);
+            Instantiate(placedObject[selection], arPlane.transform.position, Quaternion.identity);
 
         }
     }
